@@ -1,5 +1,3 @@
-const compositores= require('../models/compositores');
-const violines= require('../models/violines');
 const respond= require('../helpers/responder');
 const connection= require('../DB/connection');
 
@@ -70,7 +68,6 @@ class Music_controller {
         try {
             const database= await connection.run();
             const collection= database.collection("violines");
-            /*
             if (req.body.length> 1) {
                 for (let i= 0; i < req.body.length; i++) {
                     collection.insertOne(req.body[i]);
