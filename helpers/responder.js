@@ -10,9 +10,9 @@ class Responder {
         return res.status(201).send(msg);
     }
 
-    static error(res) {
-        return res.json({
-            msg: "No pudimos completar con su petición, intente más tarde"
+    static error(res, msg= "No pudimos completar con su petición, intente más tarde", stat_code) {
+        return res.status(stat_code).json({
+            msg: msg
         })
     };
 }

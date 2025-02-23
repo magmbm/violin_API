@@ -1,25 +1,19 @@
 const respond= require('../helpers/responder');
 const connection= require('../DB/connection');
+const valid= require('../helpers/validators');
+const { ObjectId } = require('mongodb');
+const Validations= valid.Validations;
 
-function to_title_case(str) {
-    let capitalize= true;
-    let temp= "";
-    let temp_char;
-    for (let i= 0; i< str.length; i++) {
-        if (capitalize== true) {
-            temp_char= str.charAt(i).toUpperCase();
-            temp+= temp_char; 
-            capitalize= false;
-        } else if (str.charAt(i)== " ") {
-            capitalize= true; 
-            temp+= " ";
-        } else {
-            temp+= str.charAt(i);
-        }
-        console.log(i);
-    }
-    return temp
-};
+//Mensajes de error
+const user_input_error= "Usted ha ingresado uno o más datos con el formato incorrecto, " +
+"si desea saber más sobre el formato de ingreso apropiado puede ir a: 'http://localhost:8080/v1/formatos'\n\n" + 
+"You have entered one or more field with an incorrect format, if you wish to know more about supported formats " +
+"you can visit: 'http://localhost:8080/v1/formatos'";
+
+const fecha_msg= "Usted ha ingresado una fecha incorrecta, dado que o Amati aún no inventaba el violín o la fecha es " +
+"muy reciente para considerar el instruemento 'historico'. / " +
+"You have entered an incorrect date, cause either Amati had yet to invent the violin or the date is to recent to " +
+"consider the instrument as 'historic'.";
 
 
 class Music_controller {
@@ -32,37 +26,60 @@ class Music_controller {
         }
     }
 
-    static get_composers(req, res, next) {
-        try {
-            return respond.Responder.success(res, 'Funciona', compositores);
-        } catch (err) {
-            return err;
-        }
-    }
-
     static async get_violines(req, res, next) {
         try {
             const database= await connection.run();
             const collection= database.collection("violines");
-            const datos= await collection.find().toArray();
+            const min_year= req.query.min;
+            const max_year= req.query.max;
+            let datos;
+            //Validar que no estén vacios tampoco y no sean strings
+            if (min_year!= undefined || max_year!= undefined) {
+                if (await Validations.anio_creacion(min_year) && await Validations.anio_creacion(max_year)) {
+                    console.log("Flag1");
+                    datos= await collection.find({ anio_creacion : { $gte : parseInt(min_year), $lte : parseInt(max_year) } }).toArray();
+                    return respond.Responder.success(res, '', datos);
+                } else if (await Validations.anio_creacion(min_year)) {
+                    console.log("Flag2");
+                    datos= await collection.find({ anio_creacion : { $gte : parseInt(min_year) } }).toArray();
+                    return respond.Responder.success(res, 'Violines creados despúes de ' + min_year, datos);
+                } else if (await Validations.anio_creacion(max_year)) {
+                    console.log("Flag3");
+                    datos= await collection.find({ anio_creacion : { $lte : parseInt(max_year) } }).toArray();
+                    return respond.Responder.success(res, '', datos);
+                } else {
+                    return respond.Responder.error(res, "Los parametros para anio de creacion no fueron bien ingresados", 400)
+                }
+            } 
+            console.log("Flag4");
+            datos= await collection.find().toArray();
             return respond.Responder.success(res, 'Funciona', datos);
         } catch (err) {
             return err;
         };
     }
 
-    static async get_violines_by_name(req, res, next) {
+    static async get_violines_by_id(req, res, next) {
         try {
-            let req_name= req.params.nombre;
-            console.log(req_name);
+            let req_id= req.params.id;
+            console.log(req_id);
             const database= await connection.run();
             const collection= database.collection("violines");
-            const datos= await collection.find({ nombre : req_name }).toArray();
+            const datos= await collection.find({ _id : ObjectId("6798052fcfbb4954da40e550") }).toArray();
             return respond.Responder.success(res, 'Funciona', datos);
         } catch (err) {
             return respond.Responder.error(res);
         }
     };
+
+    static async get_violines_by_luthier(req, res) {
+        try {
+            let req_luthier= req.params.luthier;
+            console.log(req_luthier);
+        } catch (err) {
+            return respond.Responder.error(res);
+        }
+    }
 
     static async add_violines(req, res, next) {
         try {
@@ -70,6 +87,9 @@ class Music_controller {
             const collection= database.collection("violines");
             if (req.body.length> 1) {
                 for (let i= 0; i < req.body.length; i++) {
+                    if (await !Validations.anio_creacion(req.body[i].anio_creacion)) {
+                        return respond.Responder.error(res, fecha_msg, 400);
+                    }
                     collection.insertOne(req.body[i]);
                 }
             } else {

@@ -8,11 +8,14 @@ router.get('/v1', (req, res) => {
     )
 });
 
-router.get('/v1/compositores', control.Music_controller.get_composers);
 router.get('/v1/violines', control.Music_controller.get_violines);
-router.get('/v1/violines/:nombre', control.Music_controller.get_violines_by_name)
+router.get('/v1/violines/:id', control.Music_controller.get_violines_by_id);
 
 router.post('/v1/violines', control.Music_controller.add_violines);
 
 
 module.exports= router;
+
+/* 
+?
+*/
