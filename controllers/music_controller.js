@@ -26,6 +26,7 @@ class Music_controller {
         }
     }
 
+    //Validar que no estén vacios tampoco y no sean strings
     static async get_violines(req, res, next) {
         try {
             const database= await connection.run();
@@ -36,38 +37,34 @@ class Music_controller {
             let datos;
             if (nombre!= undefined) {
                 datos= await collection.find({ nombre : nombre }).toArray();
-                console.log("Flag-Name");
                 return respond.Responder.success(res, '', datos);
-            };
-            //Validar que no estén vacios tampoco y no sean strings
-            if (min_year!= undefined || max_year!= undefined) {
+            } else if (min_year!= undefined || max_year!= undefined) {
                 if (await Validations.anio_creacion(min_year) && await Validations.anio_creacion(max_year)) {
-                    console.log("Flag1");
                     datos= await collection.find({ anio_creacion : { $gte : parseInt(min_year), $lte : parseInt(max_year) } }).toArray();
                     return respond.Responder.success(res, '', datos);
                 } else if (await Validations.anio_creacion(min_year)) {
-                    console.log("Flag2");
                     datos= await collection.find({ anio_creacion : { $gte : parseInt(min_year) } }).toArray();
                     return respond.Responder.success(res, 'Violines creados despúes de ' + min_year, datos);
                 } else if (await Validations.anio_creacion(max_year)) {
-                    console.log("Flag3");
                     datos= await collection.find({ anio_creacion : { $lte : parseInt(max_year) } }).toArray();
                     return respond.Responder.success(res, '', datos);
                 } else {
                     return respond.Responder.error(res, "Los parametros para anio de creacion no fueron bien ingresados", 400)
                 }
             } 
-            console.log("Flag4");
             datos= await collection.find().toArray();
             return respond.Responder.success(res, 'Funciona', datos);
         } catch (err) {
-            return err;
+            return respond.Responder.error(res, '', 400);
         };
     }
 
     static async get_violines_by_id(req, res, next) {
         try {
             let req_id= req.params.id;
+            console.log(req.query.nombre.length);
+            console.log(req.query.nombre);
+            //Check if its iterable
             const object_id= new ObjectId(req_id);
             const database= await connection.run();
             const collection= database.collection("violines");
@@ -99,6 +96,43 @@ class Music_controller {
             return err;
         }
     };
+
+    static async delete_violines(req, res) {
+        try {
+            const database= await connection.run();
+            const collection= database.collection("violines");
+            let req_id= req.params.id;
+            const object_id= new ObjectId(req_id);
+            const req_nombre= req.query.nombre;
+            if (req.query.nombre.length== 1) {
+                let query= { $and : [
+                    { _id : object_id }, { nombre : req_nombre }
+                ] };
+                const result= await collection.deleteOne(query);
+                if (result.deletedCount== 1){
+                    return respond.Responder.success(res, 'Elminado');
+                } else {
+                    return respond.Responder.error(res, 'No se elimino ningún violín', 400);
+                }
+            }
+        } catch {
+            console.log("ERROR");
+            return respond.Responder.error(res, 'No se elimino ningún violín', 400);
+        }
+    }
+
+    static async pruebas(req, res) {
+        try{
+            if (req.query.nombre[1]== undefined){
+                console.log("Mas de uno");
+            } else {
+                console.log("Solo uno");
+            }
+        } catch {
+
+        };
+    }
+
 }
 
 
