@@ -1,7 +1,7 @@
 const respond= require('../helpers/responder');
 const connection= require('../DB/connection');
 const valid= require('../helpers/validators');
-const { ObjectId } = require('mongodb');
+const  ObjectId   = require('mongodb').ObjectId;
 const Validations= valid.Validations;
 
 //Mensajes de error
@@ -32,7 +32,13 @@ class Music_controller {
             const collection= database.collection("violines");
             const min_year= req.query.min;
             const max_year= req.query.max;
+            const nombre= req.query.nombre;
             let datos;
+            if (nombre!= undefined) {
+                datos= await collection.find({ nombre : nombre }).toArray();
+                console.log("Flag-Name");
+                return respond.Responder.success(res, '', datos);
+            };
             //Validar que no estén vacios tampoco y no sean strings
             if (min_year!= undefined || max_year!= undefined) {
                 if (await Validations.anio_creacion(min_year) && await Validations.anio_creacion(max_year)) {
@@ -62,24 +68,15 @@ class Music_controller {
     static async get_violines_by_id(req, res, next) {
         try {
             let req_id= req.params.id;
-            console.log(req_id);
+            const object_id= new ObjectId(req_id);
             const database= await connection.run();
             const collection= database.collection("violines");
-            const datos= await collection.find({ _id : ObjectId("6798052fcfbb4954da40e550") }).toArray();
+            const datos= await collection.find({ _id : object_id }).toArray();
             return respond.Responder.success(res, 'Funciona', datos);
         } catch (err) {
-            return respond.Responder.error(res);
+            return respond.Responder.error(res, 'Esta ID no existe en la base de datos', 400);
         }
     };
-
-    static async get_violines_by_luthier(req, res) {
-        try {
-            let req_luthier= req.params.luthier;
-            console.log(req_luthier);
-        } catch (err) {
-            return respond.Responder.error(res);
-        }
-    }
 
     static async add_violines(req, res, next) {
         try {
