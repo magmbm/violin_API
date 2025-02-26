@@ -15,6 +15,7 @@ const fecha_msg= "Usted ha ingresado una fecha incorrecta, dado que o Amati aún
 "You have entered an incorrect date, cause either Amati had yet to invent the violin or the date is to recent to " +
 "consider the instrument as 'historic'.";
 
+ 
 
 class Music_controller {
 
@@ -26,6 +27,7 @@ class Music_controller {
         }
     }
 
+    //Chain of Responsability podría ser usado aquí
     //Validar que no estén vacios tampoco y no sean strings
     static async get_violines(req, res, next) {
         try {
@@ -34,12 +36,34 @@ class Music_controller {
             const min_year= req.query.min;
             const max_year= req.query.max;
             const nombre= req.query.nombre;
+            const luthier= req.query.luthier;
             let datos;
-            if (nombre!= undefined) {
+            if (nombre== undefined && luthier== undefined && max_year== undefined && min_year== undefined) {
+                datos= await collection.find().toArray();
+                return respond.Responder.success(res, 'Todos los violines', datos);
+            } else if (nombre!= undefined) {
                 datos= await collection.find({ nombre : nombre }).toArray();
                 return respond.Responder.success(res, '', datos);
-            } else if (min_year!= undefined || max_year!= undefined) {
-                if (await Validations.anio_creacion(min_year) && await Validations.anio_creacion(max_year)) {
+            } else if (luthier!= undefined || min_year!= undefined || max_year!= undefined) {
+                if (luthier!= undefined && await !Validations.anio_creacion(min_year) && await !Validations.anio_creacion(max_year)) {
+                    datos= await collection.find({ luthier : luthier}).toArray();
+                    return respond.Responder.success(res, '', datos);
+                } else if (luthier!= undefined && await Validations.anio_creacion(min_year) && await Validations.anio_creacion(max_year)) {
+                    datos= await collection.find({ 
+                        luthier : luthier, anio_creacion : { $gte : parseInt(min_year), $lte : parseInt(max_year)}
+                    }).toArray();
+                    return respond.Responder.success(res, '', datos);
+                } else if (luthier!= undefined && await Validations.anio_creacion(min_year)) {
+                    datos= await collection.find({
+                        luthier : luthier, anio_creacion : { $gte : parseInt(min_year)}
+                    }).toArray();
+                    return respond.Responder.success(res, '', datos);
+                } else if (luthier!= undefined && await Validations.anio_creacion(max_year)) {
+                    datos= await collection.find({
+                        luthier : luthier, anio_creacion : { $lte : parseInt(max_year)}
+                    }).toArray();
+                    return respond.Responder.success(res, '', datos);
+                } else if (await Validations.anio_creacion(min_year) && await Validations.anio_creacion(max_year)) {
                     datos= await collection.find({ anio_creacion : { $gte : parseInt(min_year), $lte : parseInt(max_year) } }).toArray();
                     return respond.Responder.success(res, '', datos);
                 } else if (await Validations.anio_creacion(min_year)) {
@@ -52,8 +76,6 @@ class Music_controller {
                     return respond.Responder.error(res, "Los parametros para anio de creacion no fueron bien ingresados", 400)
                 }
             } 
-            datos= await collection.find().toArray();
-            return respond.Responder.success(res, 'Funciona', datos);
         } catch (err) {
             return respond.Responder.error(res, '', 400);
         };
@@ -104,17 +126,15 @@ class Music_controller {
             let req_id= req.params.id;
             const object_id= new ObjectId(req_id);
             const req_nombre= req.query.nombre;
-            if (req.query.nombre.length== 1) {
                 let query= { $and : [
                     { _id : object_id }, { nombre : req_nombre }
                 ] };
                 const result= await collection.deleteOne(query);
                 if (result.deletedCount== 1){
-                    return respond.Responder.success(res, 'Elminado');
+                    return respond.Responder.success(res, 'Eliminado');
                 } else {
                     return respond.Responder.error(res, 'No se elimino ningún violín', 400);
                 }
-            }
         } catch {
             console.log("ERROR");
             return respond.Responder.error(res, 'No se elimino ningún violín', 400);
@@ -137,5 +157,25 @@ class Music_controller {
 
 
 
+/* 
+
+            if (nombre!= undefined) {
+                datos= await collection.find({ nombre : nombre }).toArray();
+                return respond.Responder.success(res, '', datos);
+            } else if (min_year!= undefined || max_year!= undefined) {
+                if (await Validations.anio_creacion(min_year) && await Validations.anio_creacion(max_year)) {
+                    datos= await collection.find({ anio_creacion : { $gte : parseInt(min_year), $lte : parseInt(max_year) } }).toArray();
+                    return respond.Responder.success(res, '', datos);
+                } else if (await Validations.anio_creacion(min_year)) {
+                    datos= await collection.find({ anio_creacion : { $gte : parseInt(min_year) } }).toArray();
+                    return respond.Responder.success(res, 'Violines creados despúes de ' + min_year, datos);
+                } else if (await Validations.anio_creacion(max_year)) {
+                    datos= await collection.find({ anio_creacion : { $lte : parseInt(max_year) } }).toArray();
+                    return respond.Responder.success(res, '', datos);
+                } else {
+                    return respond.Responder.error(res, "Los parametros para anio de creacion no fueron bien ingresados", 400)
+                }
+            } 
+*/
 
 module.exports= { Music_controller }
