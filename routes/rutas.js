@@ -15,6 +15,8 @@ router.post('/v1/violines', control.Music_controller.add_violines);
 
 router.delete('/v1/violines/:id', control.Music_controller.delete_violines);
 
+router.put('/v1/violines/:id', control.Music_controller.pruebas);
+
 
 module.exports= router;
 

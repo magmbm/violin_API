@@ -1,4 +1,9 @@
+const responder= require('../helpers/responder');
+const error_msg= require('../helpers/mensajes');
+const mensajes_err= error_msg.mensajes_error;
+
 class Validations {
+
     static to_title_case(str) {
         let capitalize= true;
         let temp= "";
@@ -20,7 +25,7 @@ class Validations {
     };
 
     static luthier_val(luthier) {
-
+        
     }
 
     static anio_creacion(year) {
@@ -32,6 +37,19 @@ class Validations {
         } else {
             return true;
         };
+    }
+
+    static id_validation (id, res) {
+        if (id.length != 24 || !isNaN(id)) {
+            return responder.Responder.error(res, mensajes_err.invalid_id, 400);
+        } else {
+            for (let i= 0; i < id.length; i++ ) {
+                if((id[i] < '0' || id[i] > '9') && 
+                (id[i] < 'A' || id[i] > 'F')) {
+                    return responder.Responder.error(res, mensajes_err.invalid_id, 400);
+                }
+            }
+        }
     }
 }
 

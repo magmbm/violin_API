@@ -1,19 +1,11 @@
 const respond= require('../helpers/responder');
 const connection= require('../DB/connection');
 const valid= require('../helpers/validators');
-const  ObjectId   = require('mongodb').ObjectId;
+const { mensajes_error } = require('../helpers/mensajes');
+const ObjectId= require('mongodb').ObjectId;
 const Validations= valid.Validations;
 
 //Mensajes de error
-const user_input_error= "Usted ha ingresado uno o más datos con el formato incorrecto, " +
-"si desea saber más sobre el formato de ingreso apropiado puede ir a: 'http://localhost:8080/v1/formatos'\n\n" + 
-"You have entered one or more field with an incorrect format, if you wish to know more about supported formats " +
-"you can visit: 'http://localhost:8080/v1/formatos'";
-
-const fecha_msg= "Usted ha ingresado una fecha incorrecta, dado que o Amati aún no inventaba el violín o la fecha es " +
-"muy reciente para considerar el instruemento 'historico'. / " +
-"You have entered an incorrect date, cause either Amati had yet to invent the violin or the date is to recent to " +
-"consider the instrument as 'historic'.";
 
  
 
@@ -77,13 +69,14 @@ class Music_controller {
                 }
             } 
         } catch (err) {
-            return respond.Responder.error(res, '', 400);
+            return respond.Responder.error(res, mensajes_error.no_encontrado_error, 400);
         };
     }
 
     static async get_violines_by_id(req, res, next) {
         try {
             let req_id= req.params.id;
+            Validations.id_validation(req_id);
             console.log(req.query.nombre.length);
             console.log(req.query.nombre);
             //Check if its iterable
@@ -93,7 +86,7 @@ class Music_controller {
             const datos= await collection.find({ _id : object_id }).toArray();
             return respond.Responder.success(res, 'Funciona', datos);
         } catch (err) {
-            return respond.Responder.error(res, 'Esta ID no existe en la base de datos', 400);
+            return respond.Responder.error(res, mensajes_error.id_no_encontrada, 400);
         }
     };
 
@@ -101,10 +94,12 @@ class Music_controller {
         try {
             const database= await connection.run();
             const collection= database.collection("violines");
+            //No muestra correctamente el length
+            console.log(req.body.length);
             if (req.body.length> 1) {
                 for (let i= 0; i < req.body.length; i++) {
                     if (await !Validations.anio_creacion(req.body[i].anio_creacion)) {
-                        return respond.Responder.error(res, fecha_msg, 400);
+                        return respond.Responder.error(res, mensajes_error.invalid_year, 400);
                     }
                     collection.insertOne(req.body[i]);
                 }
@@ -124,6 +119,7 @@ class Music_controller {
             const database= await connection.run();
             const collection= database.collection("violines");
             let req_id= req.params.id;
+            Validations.id_validation(req_id);
             const object_id= new ObjectId(req_id);
             const req_nombre= req.query.nombre;
                 let query= { $and : [
@@ -133,24 +129,33 @@ class Music_controller {
                 if (result.deletedCount== 1){
                     return respond.Responder.success(res, 'Eliminado');
                 } else {
-                    return respond.Responder.error(res, 'No se elimino ningún violín', 400);
+                    return respond.Responder.error(res, mensajes_error.elimination_error, 400);
                 }
+        } catch (error) {
+            console.log(error);
+            return respond.Responder.error(res, mensajes_error.elimination_error, 400);
+        }
+    }
+
+    static async update_violines() {
+        try {
+            let req_id= req.params.id;
+            Validations.id_validation(req_id)
+            const database= await connection.run();
+            const collection= database.collection("violines");
         } catch {
-            console.log("ERROR");
-            return respond.Responder.error(res, 'No se elimino ningún violín', 400);
+            return respond.Responder.error(res, 'Error en la actualización del recurso', 400);
         }
     }
 
     static async pruebas(req, res) {
-        try{
-            if (req.query.nombre[1]== undefined){
-                console.log("Mas de uno");
-            } else {
-                console.log("Solo uno");
-            }
-        } catch {
-
-        };
+        try {
+            let req_id= req.params.id;
+            return Validations.id_validation(req_id, res);
+        } catch (error) {
+            console.log(error);
+            return respond.Responder.error(res, "Error en la id", 400);
+        }
     }
 
 }
