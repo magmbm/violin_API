@@ -10,9 +10,22 @@ const mensajes_error= {
     "You have entered one or more field with an incorrect format, if you wish to know more about supported formats " +
     "you can visit: 'http://localhost:8080/v1/formatos'",
     no_encontrado_error : "No pudimos encontrar ningún violín con los parametros dados. We were unable to find a violin with the given parameters",
-    id_no_encontrada : "Esta ID no existe en la base de datos. This ID does not exist in the database"
+    id_no_encontrada : "Esta ID no existe en la base de datos. This ID does not exist in the database",
+    put_req : 
+    "Error en la actualización del recurso. Error in the resource update"
 
 } 
 
-module.exports= { mensajes_error }
+const mensajes_exito= {
+    put_req :
+    "Se actualizo la información del violín con éxito. The violin information has been successfully updated",
+    get_req:
+    "Datos obtenidos. Data obtained",
+    post_req:
+    "Violín agregado con éxito. Violin added successfully",
+    delete_req:
+    "Violín eliminado de la base de datos. Violin eliminated from the database"
+}
+
+module.exports= { mensajes_error, mensajes_exito }
 

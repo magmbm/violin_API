@@ -24,9 +24,19 @@ class Validations {
         return temp
     };
 
-    static luthier_val(luthier) {
-        
-    }
+    static luthier_nombre_val(data) {
+        if (data== undefined) {
+            return false;
+        }
+        for (let i= 0; i < data.length; i++) {
+            if ((data.charCodeAt(i)!= 45) &&(data.charCodeAt(i) < 65 || data.charCodeAt(i) > 90) &&
+                (data.charCodeAt(i) < 96 || data.charCodeAt(i) > 122) &&
+                (data.charCodeAt(i) < 192 || data.charCodeAt(i) > 255)
+                ) {
+                    return false;
+            };
+        };
+    };
 
     static anio_creacion(year) {
         if (isNaN(year)) {
@@ -39,14 +49,17 @@ class Validations {
         };
     }
 
-    static id_validation (id, res) {
+    static id_validation (id) {
         if (id.length != 24 || !isNaN(id)) {
-            return responder.Responder.error(res, mensajes_err.invalid_id, 400);
+            console.log("Flag-id-error-1");
+            return false;
         } else {
             for (let i= 0; i < id.length; i++ ) {
-                if((id[i] < '0' || id[i] > '9') && 
-                (id[i] < 'A' || id[i] > 'F')) {
-                    return responder.Responder.error(res, mensajes_err.invalid_id, 400);
+                if ((id[i] < '0' || id[i] > '9') && 
+                (id[i] < 'A' || id[i] > 'Z') &&
+                (id[i] < 'a' || id[i] > 'z')) {
+                    console.log("Flag-id-error-2 " + id[i]);
+                    return false;
                 }
             }
         }

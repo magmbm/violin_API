@@ -1,7 +1,7 @@
 const respond= require('../helpers/responder');
 const connection= require('../DB/connection');
 const valid= require('../helpers/validators');
-const { mensajes_error } = require('../helpers/mensajes');
+const { mensajes_error, mensajes_exito } = require('../helpers/mensajes');
 const ObjectId= require('mongodb').ObjectId;
 const Validations= valid.Validations;
 
@@ -30,6 +30,9 @@ class Music_controller {
             const nombre= req.query.nombre;
             const luthier= req.query.luthier;
             let datos;
+            /*if (Validations.luthier_nombre_val(nombre)== false || Validations.luthier_nombre_val(luthier)== false) {
+                return respond.Responder.error(res, mensajes_error.user_input_error, 400);
+            };*/
             if (nombre== undefined && luthier== undefined && max_year== undefined && min_year== undefined) {
                 datos= await collection.find().toArray();
                 return respond.Responder.success(res, 'Todos los violines', datos);
@@ -76,9 +79,9 @@ class Music_controller {
     static async get_violines_by_id(req, res, next) {
         try {
             let req_id= req.params.id;
-            Validations.id_validation(req_id);
-            console.log(req.query.nombre.length);
-            console.log(req.query.nombre);
+            if (Validations.id_validation(req_id)== false) {
+                return respond.Responder.error(res, mensajes_error.invalid_id, 400);
+            };
             //Check if its iterable
             const object_id= new ObjectId(req_id);
             const database= await connection.run();
@@ -119,9 +122,11 @@ class Music_controller {
             const database= await connection.run();
             const collection= database.collection("violines");
             let req_id= req.params.id;
-            Validations.id_validation(req_id);
-            const object_id= new ObjectId(req_id);
             const req_nombre= req.query.nombre;
+            if(Validations.id_validation(req_id)== false || Validations.luthier_nombre_val(req_nombre)== false) {
+                return respond.Responder.error(res, mensajes_error.user_input_error, 400);
+            };
+            const object_id= new ObjectId(req_id);
                 let query= { $and : [
                     { _id : object_id }, { nombre : req_nombre }
                 ] };
@@ -137,21 +142,94 @@ class Music_controller {
         }
     }
 
-    static async update_violines() {
+    static async update_violines(req, res) {
         try {
             let req_id= req.params.id;
-            Validations.id_validation(req_id)
+            if (Validations.id_validation(req_id)== false){
+                return respond.Responder.error(res, mensajes_error.invalid_id, 400);
+            };
             const database= await connection.run();
             const collection= database.collection("violines");
+            let new_nombre= req.body.nombre;
+            let new_luthier= req.body.luthier;
+            let new_anio= req.body.anio_creacion;
+            if (Validations.luthier_nombre_val(new_luthier)== false || Validations.luthier_nombre_val(new_nombre)== false) {
+                return respond.Responder.error(res, mensajes_error.user_input_error, 400);
+            };
+            if (Validations.anio_creacion(new_anio)== false) {
+                return respond.Responder.error(res, mensajes_error.invalid_year, 400);
+            };
+            if (new_nombre!= undefined && new_luthier!= undefined && new_anio!= undefined) {
+                await collection.updateOne(
+                    { _id : new ObjectId(req_id) },
+                    {
+                        "$set": { nombre : new_nombre, luthier : new_luthier, anio_creacion : new_anio }
+                    }
+                    );
+                return respond.Responder.success(res, "Éxito", null);
+            } else if (new_nombre!= undefined && new_luthier!= undefined) {
+                collection.updateOne(
+                { _id : new ObjectId(req_id) },
+                {
+                    "$set": { nombre : new_nombre, luthier : new_luthier }
+                }
+                );
+                return respond.Responder.success(res, mensajes_exito.put_req, null);
+            } else if (new_nombre!= undefined && new_anio!= undefined) {
+                collection.updateOne(
+                { _id : new ObjectId(req_id) },
+                {
+                    "$set": { nombre : new_nombre, anio_creacion : new_anio }
+                }
+                );
+                return respond.Responder.success(res, mensajes_exito.put_req, null);
+            } else if (new_anio!= undefined && new_luthier!= undefined) {
+                collection.updateOne(
+                { _id : new ObjectId(req_id) },
+                {
+                    "$set": { luthier : new_luthier, anio_creacion : new_anio }
+                }
+                );
+                return respond.Responder.success(res, mensajes_exito.put_req, null);
+            } else if (new_luthier!= undefined) {
+                collection.updateOne(
+                { _id : new ObjectId(req_id) },
+                {
+                    "$set": { luthier : new_luthier}
+                }
+                );
+                return respond.Responder.success(res, mensajes_exito.put_req, null);
+            } else if (new_nombre!= undefined) {
+                collection.updateOne(
+                { _id : new ObjectId(req_id) },
+                {
+                    "$set": { nombre : new_nombre}
+                }
+                );
+
+                return respond.Responder.success(res, mensajes_exito.put_req, null);
+            } else if (new_anio!= undefined) {
+                collection.updateOne(
+                { _id : new ObjectId(req_id) },
+                {
+                    "$set": { anio_creacion : new_anio }
+                }
+                );
+                return respond.Responder.success(res, mensajes_exito.put_req, null);
+            }
         } catch {
-            return respond.Responder.error(res, 'Error en la actualización del recurso', 400);
+            return respond.Responder.error(res, mensajes_error.put_req, 400);
         }
     }
 
     static async pruebas(req, res) {
         try {
-            let req_id= req.params.id;
-            return Validations.id_validation(req_id, res);
+
+            let nombre= req.query.nombre;
+            let num= undefined;
+            Validations.luthier_nombre_val(nombre, res);
+            //Validations.anio_creacion(num)
+            //Validations.id_validation(req_id, res);
         } catch (error) {
             console.log(error);
             return respond.Responder.error(res, "Error en la id", 400);
@@ -162,25 +240,5 @@ class Music_controller {
 
 
 
-/* 
-
-            if (nombre!= undefined) {
-                datos= await collection.find({ nombre : nombre }).toArray();
-                return respond.Responder.success(res, '', datos);
-            } else if (min_year!= undefined || max_year!= undefined) {
-                if (await Validations.anio_creacion(min_year) && await Validations.anio_creacion(max_year)) {
-                    datos= await collection.find({ anio_creacion : { $gte : parseInt(min_year), $lte : parseInt(max_year) } }).toArray();
-                    return respond.Responder.success(res, '', datos);
-                } else if (await Validations.anio_creacion(min_year)) {
-                    datos= await collection.find({ anio_creacion : { $gte : parseInt(min_year) } }).toArray();
-                    return respond.Responder.success(res, 'Violines creados despúes de ' + min_year, datos);
-                } else if (await Validations.anio_creacion(max_year)) {
-                    datos= await collection.find({ anio_creacion : { $lte : parseInt(max_year) } }).toArray();
-                    return respond.Responder.success(res, '', datos);
-                } else {
-                    return respond.Responder.error(res, "Los parametros para anio de creacion no fueron bien ingresados", 400)
-                }
-            } 
-*/
 
 module.exports= { Music_controller }
