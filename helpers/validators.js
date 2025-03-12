@@ -25,17 +25,19 @@ class Validations {
     };
 
     static luthier_nombre_val(data) {
-        if (data== undefined) {
+        if (data== !isNaN) {
             return false;
         }
         for (let i= 0; i < data.length; i++) {
-            if ((data.charCodeAt(i)!= 45) &&(data.charCodeAt(i) < 65 || data.charCodeAt(i) > 90) &&
+            if ((data.charCodeAt(i)!= 45) &&  (data.charCodeAt(i)!= 32) && (data.charCodeAt(i) < 65 || data.charCodeAt(i) > 90) &&
                 (data.charCodeAt(i) < 96 || data.charCodeAt(i) > 122) &&
                 (data.charCodeAt(i) < 192 || data.charCodeAt(i) > 255)
                 ) {
+                    console.log(i);
                     return false;
             };
         };
+        return true;
     };
 
     static anio_creacion(year) {

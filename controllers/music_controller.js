@@ -5,9 +5,6 @@ const { mensajes_error, mensajes_exito } = require('../helpers/mensajes');
 const ObjectId= require('mongodb').ObjectId;
 const Validations= valid.Validations;
 
-//Mensajes de error
-
- 
 
 class Music_controller {
 
@@ -19,61 +16,176 @@ class Music_controller {
         }
     }
 
-    //Chain of Responsability podría ser usado aquí
-    //Validar que no estén vacios tampoco y no sean strings
-    static async get_violines(req, res, next) {
-        try {
-            const database= await connection.run();
-            const collection= database.collection("violines");
-            const min_year= req.query.min;
-            const max_year= req.query.max;
-            const nombre= req.query.nombre;
-            const luthier= req.query.luthier;
-            let datos;
-            /*if (Validations.luthier_nombre_val(nombre)== false || Validations.luthier_nombre_val(luthier)== false) {
-                return respond.Responder.error(res, mensajes_error.user_input_error, 400);
-            };*/
-            if (nombre== undefined && luthier== undefined && max_year== undefined && min_year== undefined) {
-                datos= await collection.find().toArray();
-                return respond.Responder.success(res, 'Todos los violines', datos);
-            } else if (nombre!= undefined) {
-                datos= await collection.find({ nombre : nombre }).toArray();
-                return respond.Responder.success(res, '', datos);
-            } else if (luthier!= undefined || min_year!= undefined || max_year!= undefined) {
-                if (luthier!= undefined && await !Validations.anio_creacion(min_year) && await !Validations.anio_creacion(max_year)) {
-                    datos= await collection.find({ luthier : luthier}).toArray();
-                    return respond.Responder.success(res, '', datos);
-                } else if (luthier!= undefined && await Validations.anio_creacion(min_year) && await Validations.anio_creacion(max_year)) {
-                    datos= await collection.find({ 
-                        luthier : luthier, anio_creacion : { $gte : parseInt(min_year), $lte : parseInt(max_year)}
-                    }).toArray();
-                    return respond.Responder.success(res, '', datos);
-                } else if (luthier!= undefined && await Validations.anio_creacion(min_year)) {
-                    datos= await collection.find({
-                        luthier : luthier, anio_creacion : { $gte : parseInt(min_year)}
-                    }).toArray();
-                    return respond.Responder.success(res, '', datos);
-                } else if (luthier!= undefined && await Validations.anio_creacion(max_year)) {
-                    datos= await collection.find({
-                        luthier : luthier, anio_creacion : { $lte : parseInt(max_year)}
-                    }).toArray();
-                    return respond.Responder.success(res, '', datos);
-                } else if (await Validations.anio_creacion(min_year) && await Validations.anio_creacion(max_year)) {
-                    datos= await collection.find({ anio_creacion : { $gte : parseInt(min_year), $lte : parseInt(max_year) } }).toArray();
-                    return respond.Responder.success(res, '', datos);
-                } else if (await Validations.anio_creacion(min_year)) {
-                    datos= await collection.find({ anio_creacion : { $gte : parseInt(min_year) } }).toArray();
-                    return respond.Responder.success(res, 'Violines creados despúes de ' + min_year, datos);
-                } else if (await Validations.anio_creacion(max_year)) {
-                    datos= await collection.find({ anio_creacion : { $lte : parseInt(max_year) } }).toArray();
-                    return respond.Responder.success(res, '', datos);
-                } else {
-                    return respond.Responder.error(res, "Los parametros para anio de creacion no fueron bien ingresados", 400)
-                }
-            } 
-        } catch (err) {
-            return respond.Responder.error(res, mensajes_error.no_encontrado_error, 400);
-        };
+    static async nombre_logic(min_year, max_year, luthier, nombre, collection) {
+        if(!Validations.luthier_nombre_val(nombre)) {
+            return null;
+        } 
+        let datos;
+        if (luthier!= undefined && min_year!= undefined && max_year!= undefined) {
+            if (!Validations.luthier_nombre_val(luthier)) {
+                return null;
+            } else if (!Validations.anio_creacion(min_year)) {
+                return null;
+            } else if (!Validations.anio_creacion(max_year)) {
+                return null;
+            }
+            datos= await collection.find({ 
+                    nombre : nombre, luthier : luthier, anio_creacion : { $gte : parseInt(min_year), $lte : parseInt(max_year)}
+                }).toArray;
+            return datos;
+        } else if (luthier!= undefined && min_year!= undefined) {
+            if (!Validations.luthier_nombre_val(luthier)) {
+                return null;
+            } else if (!Validations.anio_creacion(min_year)) {
+                return null;
+            } else if (!Validations.anio_creacion(max_year)) {
+                return null;
+            }
+            datos= await collection.find({
+                nombre : nombre, luthier : luthier, anio_creacion : { $gte : parseInt(min_year)}
+            }).toArray();
+            return datos;
+        } else if (luthier!=undefined && max_year!= undefined) {
+            if (!Validations.luthier_nombre_val(luthier)) {
+                return null;
+            } else if (!Validations.anio_creacion(min_year)) {
+                return null;
+            } else if (!Validations.anio_creacion(max_year)) {
+                return null;
+            }
+            datos= await collection.find({
+                nombre : nombre, luthier : luthier, anio_creacion : { $lte : parseInt(max_year)}
+            }).toArray();
+            return datos;
+        } else if (luthier!= undefined) {
+            if (!Validations.luthier_nombre_val(luthier)) {
+                return null;
+            }            
+            datos= await collection.find({ nombre : nombre, luthier : luthier}).toArray();
+            return datos;
+        } else if (max_year!= undefined && min_year!= undefined) {
+            if (!Validations.anio_creacion(min_year)) {
+                return null;
+            } else if (!Validations.anio_creacion(max_year)) {
+                return null;
+            }
+            datos= await collection.find({ 
+                    nombre : nombre, anio_creacion : { $gte : parseInt(min_year), $lte : parseInt(max_year)}
+                }).toArray;
+            return datos
+        } else if (min_year!= undefined) {
+            if (!Validations.anio_creacion(min_year)) {
+                return null;
+            }
+            datos= await collection.find({
+                nombre : nombre, anio_creacion : { $gte : parseInt(min_year)}
+            }).toArray();
+            return datos;
+        } else if (max_year!= undefined) {
+            if (!Validations.anio_creacion(max_year)) {
+                return null;
+            }
+            datos= await collection.find({
+                nombre : nombre, anio_creacion : { $lte : parseInt(max_year)}
+            }).toArray();
+            return datos;
+        } else {
+            datos= await collection.find({ nombre : nombre }).toArray();
+            return datos;
+        } 
+    }
+
+    static async luthier_logic(min_year, max_year, luthier, collection) {
+        if (!Validations.luthier_nombre_val(luthier)) {
+            return null;
+        }
+        let datos;
+        if (min_year!= undefined && max_year!= undefined) {
+            if (!Validations.anio_creacion(min_year)) {
+                return null;
+            }
+            if (!Validations.anio_creacion(max_year)) {
+                return null;
+            }
+            datos= await collection.find({
+                luthier : luthier, anio_creacion : { $gte : parseInt(min_year), $lte : parseInt(max_year)} 
+            }).toArray();
+            return datos;
+        } else if (min_year!= undefined) {
+            if (!Validations.anio_creacion(min_year)) {
+                return null;
+            }
+            datos= await collection.find({
+                luthier : luthier, anio_creacion : { $gte : parseInt(min_year)}
+            }).toArray();
+            return datos;
+        } else if (max_year!= undefined) {
+            if (!Validations.anio_creacion(max_year)) {
+                return null;
+            }
+            datos= await collection.find({
+                luthier : luthier, anio_creacion : { $lte : parseInt(max_year) }
+            }).toArray();
+            return datos;
+        } else {
+            datos= await collection.find({ luthier : luthier }).toArray();
+            return datos;
+        }
+    }
+
+    static async max_year_logic(min_year, max_year, collection) {
+        if (!Validations.anio_creacion(max_year)) {
+            return null;
+        }
+        let datos;
+        if (min_year!= undefined) {
+            if (!Validations.anio_creacion(min_year)) {
+                return null;
+            }
+            datos= await collection.find({ anio_creacion : { $gte : parseInt(min_year), $lte : parseInt(max_year) } }).toArray();
+            return datos;
+        } else {
+            datos= await collection.find({ anio_creacion : { $lte : parseInt(max_year) } }).toArray();
+            return datos;
+        }
+    }
+
+    static async min_year_logic(min_year, collection) {
+        if (!Validations.anio_creacion(min_year)) {
+            return null;
+        }
+        let datos;
+        datos= await collection.find({ anio_creacion : { $gte : parseInt(min_year) } }).toArray();
+        return datos;
+    }
+
+
+
+    static async get_logic(req, res) {
+        const database= await connection.run();
+        const collection= database.collection("violines");
+        const min_year= req.query.min;
+        const max_year= req.query.max;
+        const nombre= req.query.nombre;
+        const luthier= req.query.luthier;
+        let datos;
+        if (min_year== undefined && max_year== undefined && nombre== undefined && luthier== undefined) {
+            datos= await collection.find().toArray();
+        } else if (nombre!= undefined) {
+            datos= await Music_controller.nombre_logic(min_year, max_year, luthier, nombre, collection);
+        } else if (luthier!= undefined) {
+            datos= await Music_controller.luthier_logic(min_year, max_year, luthier, collection);
+        } else if (max_year!= undefined) {
+            datos= await Music_controller.max_year_logic(min_year, max_year, collection);
+        } else if (min_year!= undefined) {
+            datos= await Music_controller.min_year_logic(min_year, collection);
+        }
+        if (datos!= null) {
+            return respond.Responder.success(res, 'Éxito en buscar datos', datos);
+        } else {
+            return respond.Responder.error(res, '', 400);
+        } 
+
     }
 
     static async get_violines_by_id(req, res, next) {
@@ -222,21 +334,16 @@ class Music_controller {
         }
     }
 
-    static async pruebas(req, res) {
+
+    static pruebas(req, res) {
         try {
 
-            let nombre= req.query.nombre;
-            let num= undefined;
-            Validations.luthier_nombre_val(nombre, res);
-            //Validations.anio_creacion(num)
-            //Validations.id_validation(req_id, res);
-        } catch (error) {
-            console.log(error);
-            return respond.Responder.error(res, "Error en la id", 400);
+        } catch {
+
         }
     }
-
 }
+
 
 
 

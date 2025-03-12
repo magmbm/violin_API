@@ -8,7 +8,7 @@ router.get('/v1', (req, res) => {
     )
 });
 
-router.get('/v1/violines', control.Music_controller.get_violines);
+router.get('/v1/violines', control.Music_controller.get_logic);
 router.get('/v1/violines/:id', control.Music_controller.get_violines_by_id);
 
 router.post('/v1/violines', control.Music_controller.add_violines);
