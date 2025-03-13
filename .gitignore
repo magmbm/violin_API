@@ -1,5 +1,6 @@
 #files to ignore
+
+*DB/
 *node_modules/
-DB/
 /*.json
 *reglas_de_negocio.txt
