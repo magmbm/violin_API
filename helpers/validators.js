@@ -53,7 +53,6 @@ class Validations {
 
     static id_validation (id) {
         if (id.length != 24 || !isNaN(id)) {
-            console.log("Flag-id-error-1");
             return false;
         } else {
             for (let i= 0; i < id.length; i++ ) {
@@ -65,6 +64,7 @@ class Validations {
                 }
             }
         }
+        return true;
     }
 }
 

@@ -12,7 +12,11 @@ const mensajes_error= {
     no_encontrado_error : "No pudimos encontrar ningún violín con los parametros dados. We were unable to find a violin with the given parameters",
     id_no_encontrada : "Esta ID no existe en la base de datos. This ID does not exist in the database",
     put_req : 
-    "Error en la actualización del recurso. Error in the resource update"
+    "Error en la actualización del recurso. Error in the resource update",
+    get_req:
+    "Incapaz de obtener los datos. Unable to obtain data",
+    post_req:
+    "No se pudo ingresar el documento. The document couldn't be entered"
 
 } 
 
