@@ -59,9 +59,20 @@ class Validations {
                 if ((id[i] < '0' || id[i] > '9') && 
                 (id[i] < 'A' || id[i] > 'Z') &&
                 (id[i] < 'a' || id[i] > 'z')) {
-                    console.log("Flag-id-error-2 " + id[i]);
                     return false;
                 }
+            }
+        }
+        return true;
+    }
+
+    //Trabajar en esta función
+    static email_validation(email) {
+        for (let i= 0; i < email.length; i++) {
+            if ((email[i] < '.' || email[i] > '9') && 
+            (email[i] < '@' || email[i] > 'Z') &&
+            (email[i] < 'a' || email[i] > 'z')) {
+                return false;
             }
         }
         return true;

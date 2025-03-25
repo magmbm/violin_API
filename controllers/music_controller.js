@@ -4,6 +4,7 @@ const valid= require('../helpers/validators');
 const { mensajes_error, mensajes_exito } = require('../helpers/mensajes');
 const ObjectId= require('mongodb').ObjectId;
 const Validations= valid.Validations;
+const jwt = require('jsonwebtoken');
 
 
 class Music_controller {
@@ -14,6 +15,19 @@ class Music_controller {
         } catch (err) {
             return err;
         }
+    }
+
+    static async get_user_rol(token) {
+        try {
+            let decoded= await jwt.verify(token, 'supersecret');
+            return decoded.user_rol;
+        } catch {
+            return null;
+        }
+    };
+
+    static async get_information(req, res) {
+        return respond.Responder.success(res, mensajes_exito.get_req, data);
     }
 
     static async nombre_logic(min_year, max_year, luthier, nombre, collection) {
@@ -166,6 +180,9 @@ class Music_controller {
         const max_year= req.query.max;
         const nombre= req.query.nombre;
         const luthier= req.query.luthier;
+        if (await Music_controller.get_user_rol(req.headers.token)== null) {
+            return respond.Responder.error(res, mensajes_error.invalid_token, 401);
+        };
         let datos;
         if (min_year== undefined && max_year== undefined && nombre== undefined && luthier== undefined) {
             datos= await collection.find().toArray();
@@ -278,15 +295,17 @@ class Music_controller {
 
     static async get_violines_by_id(req, res, next) {
         try {
+            if (await Music_controller.get_user_rol(req.headers.token)== null) {
+                return respond.Responder.error(res, mensajes_error.invalid_token, 401);
+            };
             let req_id= req.params.id;
             if (!Validations.id_validation(req_id)) {
                 return respond.Responder.error(res, mensajes_error.invalid_id, 400);
             };
-            //Check if its iterable
             const object_id= ObjectId.createFromHexString(req_id);
             const database= await connection.run();
             const collection= database.collection("violines");
-            const datos= await collection.find({ _id : object_id }).toArray();
+            const datos= await collection.findOne({ _id : object_id });
             return respond.Responder.success(res, mensajes_exito.get_req, datos);
         } catch {
             return respond.Responder.error(res, mensajes_error.id_no_encontrada, 400);
@@ -307,7 +326,9 @@ class Music_controller {
 
     static async add_violines(req, res, next) {
         try {
-
+            if (await Music_controller.get_user_rol()!= 'admin') {
+                return respond.Responder.error(res, mensajes_error.accion_no_autorizada, 401); 
+            };
             const database= await connection.run();
             const collection= database.collection("violines");
             //Check for length
@@ -332,6 +353,9 @@ class Music_controller {
 
     static async delete_violines(req, res) {
         try {
+            if (await Music_controller.get_user_rol()!= 'admin') {
+                return respond.Responder.error(res, mensajes_error.accion_no_autorizada, 401); 
+            };
             const database= await connection.run();
             const collection= database.collection("violines");
             let req_id= req.params.id;
@@ -356,6 +380,9 @@ class Music_controller {
 
     static async update_violines(req, res) {
         try {
+            if (await Music_controller.get_user_rol()!= 'admin') {
+                return respond.Responder.error(res, mensajes_error.accion_no_autorizada, 401); 
+            }
             let temp_id= req.params.id;
             if (await !Validations.id_validation(temp_id)){
                 return respond.Responder.error(res, mensajes_error.invalid_id, 400);
@@ -381,6 +408,34 @@ class Music_controller {
         try {
 
         } catch {
+
+        }
+    }
+
+    static async token(req, res) {
+        try {
+            const email= req.headers.email;
+            if (email== undefined || await !Validations.email_validation(email)) {
+                return respond.Responder.error(res, mensajes_error.email, 400);
+            };
+            const database= await connection.run();
+            const collection= database.collection("usuario");
+            const usuario= await collection.findOne({ email : email });
+            let rol;
+            if (usuario== null) {
+                await collection.insertOne({
+                    email : email,
+                    rol: "user",
+                    key : ""
+                });
+                rol= "user";
+            } else {
+                rol= usuario.rol
+            }
+            let token= jwt.sign({ user_rol: rol }, 'supersecret', { expiresIn: 180 });             
+            return respond.Responder.success(res, mensajes_exito.token, token);
+        } catch (err){
+            return respond.Responder.error(res, 'Error', 400);
 
         }
     }

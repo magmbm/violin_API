@@ -16,7 +16,13 @@ const mensajes_error= {
     get_req:
     "Incapaz de obtener los datos. Unable to obtain data",
     post_req:
-    "No se pudo ingresar el documento. The document couldn't be entered"
+    "No se pudo ingresar el documento. The document couldn't be entered",
+    email :
+    "Email no encontrado o inválido. Email not found or invalid",
+    invalid_token :
+    "El token no es valido o ha vencido. The token is invalid or it has caducated",
+    accion_no_autorizada :
+    "No cuentas con la autorización para realizar esta acción. You don't have authorization to complete this action"
 
 } 
 
@@ -28,7 +34,15 @@ const mensajes_exito= {
     post_req:
     "Violín agregado con éxito. Violin added successfully",
     delete_req:
-    "Violín eliminado de la base de datos. Violin eliminated from the database"
+    "Violín eliminado de la base de datos. Violin eliminated from the database",
+    token :
+    "Token obtenido con éxito. Token obtained successfully",
+    
+}
+
+const general_information= {
+    general :
+    ""
 }
 
 module.exports= { mensajes_error, mensajes_exito }
